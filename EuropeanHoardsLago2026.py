@@ -14,9 +14,7 @@ one section that also exports a supporting Word table), tqdm (optional,
 for a progress bar during a Monte Carlo simulation).
 
 Usage: run this script from the same directory as DB.xlsx (the source
-database, sheet "DB"). Each section can also be run independently inside
-a Jupyter notebook (see Figure_Monografia_EN.ipynb for the cell-by-cell
-version).
+database, sheet "DB"). 
 """
 
 
@@ -98,14 +96,12 @@ def hls_to_hex(h, l, s):
     return mcolors.to_hex((r, g, b))
 
 def get_muted_dark_color(base_hex, sat_factor=0.55, lightness=0.40):
-    """Un solo tono scuro e desaturato (nessuna variazione tra OR)."""
     h, l, s = hex_to_hls(base_hex)
     l = np.clip(lightness, 0, 1)
     s = np.clip(s * sat_factor, 0, 1)
     return hls_to_hex(h, l, s)
 
 def prepare_panel(data, col_or):
-    """OR_1->OR_5 (top->bottom); within each OR: Start desc, Dur asc, End desc."""
     rows, y = [], 0.0
     GAP = 0.8
     for or_lab in OR_ORDER:
@@ -647,7 +643,6 @@ EDGE_KW = dict(edgecolor="white", linewidth=0.6)
 COL_COMPLETE = "#000000"  # black
 COL_FRAGMIX = "#CFCFCF"   # light gray
 
-# ===== Riquadri tratteggiati (indici inclusivi su CATS) =====
 # Weapons: 0-2; Tools: 4-5; Jewels: 6-8; Ingots: 9-9
 grp_idx = {
     "Weapons": (0, 2),   # Spearheads-Swords-Daggers
@@ -663,7 +658,6 @@ grp_style = {
     "Ingots":  dict(color="#9467bd", ls=DASH, lw=0.9),
 }
 
-# ---------- helper robusti ----------
 def col_like(df, name):
     low = {c.lower().strip(): c for c in df.columns}
     alts = {
@@ -727,7 +721,6 @@ def categorize(artefact_raw: str) -> str:
     # fallback
     return "Other"
 
-# ===== Lettura & normalizzazione =====
 df = pd.read_excel(FILENAME, sheet_name=SHEET)
 
 COL_OR     = col_like(df, COL_OR)
@@ -748,10 +741,8 @@ df_std = pd.DataFrame({
     "Match":    as_int(df[COL_MATCH]) if COL_MATCH in df.columns else 0,
 })
 
-# periods mantenuti
 df_std = df_std[df_std["Or_fin"].isin(OR_KEEP)].copy()
 
-# Categoria finale
 df_std["Cat"] = df_std["Artefact"].apply(categorize)
 
 # ===== 12 areas (as shown in the figure) =====
@@ -808,14 +799,13 @@ for ax, area in zip(axes, AREAS):
     y_max = max((baseC + topF).max(), 1)
     ax.set_ylim(0, np.ceil(y_max * 1.30))
 
-    # riquadri tratteggiati (gruppi)
     for g, (i0, i1) in grp_idx.items():
         x0, x1 = i0 - 0.5, i1 + 0.5
         rect = Rectangle((x0, 0), x1 - x0, ax.get_ylim()[1],
                          fill=False, clip_on=False, zorder=1, **grp_style[g])
         ax.add_patch(rect)
 
-    # assi
+    # axes
     ax.set_title(area["title"], fontsize=10, pad=4)
     ax.set_xticks(x)
     ax.set_xticklabels(CATS, rotation=55, ha="right", rotation_mode="anchor", fontsize=6)
@@ -830,10 +820,10 @@ for ax, area in zip(axes, AREAS):
 for ax in axes[len(AREAS):]:
     ax.axis("off")
 
-# spaziatura pannelli
+# spaces
 fig.subplots_adjust(hspace=0.60, wspace=0.35)
 
-# legende
+# legends
 bar_handles = [Line2D([0], [0], lw=8, color=COL_COMPLETE),
                Line2D([0], [0], lw=8, color=COL_FRAGMIX)]
 fig.legend(bar_handles, ["Complete", "Fragmented"],
@@ -983,7 +973,7 @@ df = pd.DataFrame({
     "Fragment": as_int(df_raw[c_frag]),
     "Match":    as_int(df_raw[c_match]),
 })
-# escludi N/S Chrono = IC
+# ignore N/S Chrono = IC
 if c_ns is not None:
     ns = to_str_u(df_raw[c_ns])
     df = df[~ns.eq("IC")].copy()
@@ -991,7 +981,7 @@ if c_ns is not None:
 # period
 df = df[df["Or_fin"].isin(OR_KEEP)].copy()
 
-# categorizza
+# categorize
 df["Cat"] = df["Artefact"].apply(categorize)
 
 # ---------- areas (A/B/C) ----------
@@ -1022,7 +1012,7 @@ areas = [
     ("Area A", df[mask_A].copy()),
 ]
 
-# ---------- PLOT (3 pannelli impilati, PAGINA INTERA) ----------
+# ---------- PLOT (3 panels stacked) ----------
 fig, axes = plt.subplots(
     3, 1, figsize=FIGSIZE, dpi=DPI, sharex=True
 )
@@ -1064,7 +1054,7 @@ fig.legend(bar_handles, ["Complete","Fragmented"],
            loc="lower center", bbox_to_anchor=(0.5, 0.04),
            ncol=2, fontsize=10, frameon=False)
 
-# legenda gruppi tratteggiati
+# legend with dotted groups
 grp_order = ["Weapons","Tools","Jewels","Ingots"]
 grp_handles = [Line2D([0],[0], lw=2, ls=grp_style[g]["ls"], color=grp_style[g]["color"])
                for g in grp_order]
@@ -1123,7 +1113,7 @@ def to_str_u(s):  # UPPER + strip
 def as_int(s):
     return pd.to_numeric(s, errors="coerce").fillna(0).astype(int)
 
-# ============ LETTURA ============
+# ============ READING ============
 FILENAME, SHEET = "DB.xlsx", "DB"
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 
@@ -1311,7 +1301,7 @@ def norm(s):
     s = re.sub(r"[^a-z0-9]+", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
-# ------------------- Categorie e mappatura -------------------
+# ------------------- Categories and mapping -------------------
 ORDER = [
     "Spearheads","Swords","Daggers","Greaves","Knives",
     "Axes","Sickles","Chisels",
@@ -1324,7 +1314,7 @@ ORDER = [
 def cat_belted(artefact_raw):
     s = norm(artefact_raw)
 
-    # --- categorie nuove e prioritarie
+    # --- new categories 
     if "ringbarren" in s:
         return "Ringbarren"
     if "spangenbarren" in s:
@@ -1349,7 +1339,7 @@ def cat_belted(artefact_raw):
     if re.search(r"\bpin\b", s): return "Pins"
     if "fibula" in s:           return "Fibulae"
 
-    # Armi e attrezzi
+    # Weapons and tools
     if "spearhead" in s:        return "Spearheads"
     if "sword" in s:            return "Swords"
     if "dagger" in s:           return "Daggers"
@@ -1368,7 +1358,7 @@ def cat_belted(artefact_raw):
     if "ingot" in s or "barren" in s:
         return "Others"
 
-    # Altro
+    # Other
     return "Others"
 
 
@@ -1390,13 +1380,13 @@ df = pd.DataFrame({
     "Belted":   as_int(df_raw[c_belt]),
 })
 
-# Escludi Italy e San Marino
+# Ignore Italy and San Marino
 df = df[~df["State"].isin({"ITALY","SAN MARINO"})].copy()
 
 # Category for this chart
 df["Cat"] = df["Artefact"].apply(cat_belted)
 
-# ------------------- Aggregazione: solo BELTED -------------------
+# ------------------- Aggregation: only BELTED -------------------
 rows = []
 for cat in ORDER:
     sub = df[df["Cat"] == cat]
@@ -1430,7 +1420,7 @@ ax.set_axisbelow(True)
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
-# Legenda
+# Legend
 ax.legend(loc="upper left", fontsize=9, frameon=False, ncol=1)
 
 plt.tight_layout()
@@ -1464,7 +1454,7 @@ EDGE_KW_ALL = dict(edgecolor="#000000", linewidth=0.5)
 LAB_Q1, LAB_Q2, LAB_Q3 = "<⅓", "⅓–⅔", "⅔–<1" 
 
 
-# =============== LETTURA ===============
+# =============== READING ===============
 FILENAME, SHEET = "DB.xlsx", "DB"
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or    = col_like(raw, "Or_fin")
@@ -1481,7 +1471,7 @@ df = pd.DataFrame({
     "QP":       as_int(raw[c_qp]),
 })
 
-# =============== areas (righe) ===============
+# =============== areas (rows) ===============
 U = lambda s: s.upper().strip()
 GER = U("GERMANY")
 mask_C = (
@@ -1516,8 +1506,8 @@ COL_PERIODS = [
 ]
 
 PLURAL_LABEL = {
-    "Ringbarren": "Ringbarren",     # eccezione: invariato
-    "Spangenbarren": "Spangenbarren",  # eccezione: invariato
+    "Ringbarren": "Ringbarren",    
+    "Spangenbarren": "Spangenbarren",  
     "Bracelet": "Bracelets",        # already in the desired plural form
     "Axe": "Axes",
     "Dagger": "Daggers",
@@ -1675,7 +1665,7 @@ fig.legend(
     ncol=3, frameon=False, fontsize=9,
     handlelength=3.0,     # ← wider box
     handleheight=1.2,     # ← taller box
-    handletextpad=0.6,    # distanza box↔testo
+    handletextpad=0.6,    # distance box↔testo
     columnspacing=1.0,    # spacing between legend columns
     borderpad=0.3         # internal legend padding
 )
@@ -1737,7 +1727,7 @@ def to_str_u(s):  # UPPER + strip
 def as_float(s):
     return pd.to_numeric(s, errors="coerce").astype(float)
 
-# ---------- LETTURA & NORMALIZZAZIONE ----------
+# ---------- READING & NORMALIZATION ----------
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 
 c_id   = col_like(raw, "ID_Sito")
@@ -1784,6 +1774,7 @@ def masks(frame):
     }
 
 # ---------- DATA FOR A SINGLE period ----------
+
 def data_for_period(df_all, period_key):
     if period_key == "OR_4_5":
         df = df_all[df_all["Or_fin"].isin({"OR_4","OR_5"})].copy()
@@ -1800,6 +1791,7 @@ def data_for_period(df_all, period_key):
     return period_label, labels, data
 
 # ---------- DRAW A SINGLE FIGURE ----------
+
 def plot_boxes(period_key):
     per_label, labels, data = data_for_period(df0, period_key)
     color = PERIOD_COLORS[period_key]
@@ -1835,7 +1827,7 @@ def plot_boxes(period_key):
     ax.set_yscale("log")
     ax.set_ylim(allpos.min()*0.8, allpos.max()*1.5)
 
-    # aspetto
+
     ax.yaxis.grid(True, which="major", color="0.90", lw=0.7)
     ax.set_ylabel("Weight (Hoards)", fontsize=9)
     ax.tick_params(axis='x', labelsize=9, pad=6)
@@ -1920,7 +1912,7 @@ def to_str_u(s):  # UPPER + strip
 def as_float(s):
     return pd.to_numeric(s, errors="coerce").astype(float)
 
-# ===== Lettura & normalizzazione =====
+# ===== Reading & normalization =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_id   = col_like(raw, "ID_Sito")
 c_or   = col_like(raw, "Or_fin")
@@ -1980,18 +1972,18 @@ def period_subset(df, key):
     else:
         return df[df["Or_fin"].eq(key)].copy(), f"Or. {key.split('_')[1]}"
 
-UNIT = "kg"   # "g" per grammi (con etichette 100k), "kg" per chilogrammi
+UNIT = "kg"   # "g" for grams (labels 100k), "kg" per kilos
 
 def plot_hist_period(df_all, period_key):
     sub, per_label = period_subset(df_all, period_key)
     areas = masks(sub)
 
-    # --- scala/etichette ---
+    # --- scale/labels ---
     if UNIT.lower() == "kg":
         scale = 1/1000.0
         x_label = "Weight kg (Hoards)"
         xfmt = FuncFormatter(lambda x, pos: f"{int(x)}" if x >= 1 else f"{x:g}")
-    else:  # grammi
+    else:  # grams
         scale = 1.0
         x_label = "Weight gr (Hoards)"
         def _kfmt(x, pos):
@@ -2047,7 +2039,7 @@ def plot_hist_period(df_all, period_key):
         for sp in ("top","right"):
             ax.spines[sp].set_visible(False)
 
-    # etichette comuni
+    # common labels
     axes[0].set_ylabel("Counts", fontsize=9)
     axes[len(axes)//2].set_xlabel(x_label, fontsize=9, labelpad=6)
 
@@ -2122,7 +2114,7 @@ def norm(s):
     s = re.sub(r"[^a-z0-9]+", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
-# ===== Lettura =====
+# ===== Reading =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 
 c_art  = col_like(raw, "Artefact")
@@ -2294,8 +2286,8 @@ fig.suptitle("Spangenbarren", fontsize=12, y=0.98)
 
 panels = [
     ("A", vals_all,     bins_all,      (0,   bins_all[-1] if bins_all.size else 10)),
-    ("B", vals_20_125,  bins_20_125,   (20,  140)),  # solo visualizzazione
-    ("C", vals_125_250, bins_125_250,  (120, 260)),  # solo visualizzazione
+    ("B", vals_20_125,  bins_20_125,   (20,  140)),  # only visualization
+    ("C", vals_125_250, bins_125_250,  (120, 260)),  # only visualization
 ]
 
 for j, (ax, (letter, arr, bins, xlim)) in enumerate(zip(axes, panels)):
@@ -2313,7 +2305,7 @@ for j, (ax, (letter, arr, bins, xlim)) in enumerate(zip(axes, panels)):
     ax.text(0.015, 0.985, letter, transform=ax.transAxes,
             ha="left", va="top", fontsize=11, fontweight="bold")
 
-    # limiti X specifici
+    # limits 
     ax.set_xlim(*xlim)
 
     # headroom above the bars (~30% over the max count)
@@ -2324,7 +2316,7 @@ for j, (ax, (letter, arr, bins, xlim)) in enumerate(zip(axes, panels)):
     ax.set_axisbelow(True)
     for sp in ("top","right"): ax.spines[sp].set_visible(False)
 
-    # etichette assi
+    # labels
     ax.set_xlabel("Weight (gr)", fontsize=9)
     if j == 0:
         ax.set_ylabel("Counts", fontsize=9)   # only on the first
@@ -2404,7 +2396,7 @@ def make_bins(lo, hi, step):
     right = np.ceil((hi - lo) / step) * step + lo
     return np.arange(lo, right + step/2.0, step)
 
-# ========== LETTURA ==========
+# ========== READING ==========
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or   = col_like(raw, "Or_fin")
 c_st   = col_like(raw, "State")
@@ -2564,7 +2556,7 @@ def make_bins(lo, hi, step):
     right = np.ceil((hi - lo) / step) * step + lo
     return np.arange(lo, right + step/2.0, step)
 
-# ===== Lettura =====
+# ===== Reading =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or   = col_like(raw, "Or_fin")
 c_st   = col_like(raw, "State")
@@ -2594,7 +2586,7 @@ mask_areaA = (
 sub = df[is_or2 & is_comp & has_w & mask_areaA].copy()
 w = sub["Wobj"].to_numpy()
 
-# split (evita doppio conteggio sul 100)
+# split
 w_top    = w[(w > 0)    & (w < 100)]
 w_bottom = w[(w >= 100) & (w <= 700)]
 
@@ -2697,7 +2689,7 @@ def make_bins(lo, hi, step):
     right = np.ceil((hi - lo) / step) * step + lo
     return np.arange(lo, right + step/2.0, step)
 
-# ===== Lettura =====
+# ===== Reading =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or   = col_like(raw, "Or_fin")
 c_st   = col_like(raw, "State")
@@ -2733,7 +2725,7 @@ cond_match_non_complete  = (df["Comp"] < 1) & (df["Match"] > 0)
 sub = df[is_or2 & has_w & mask_areaA & (cond_frag | cond_match_non_complete)].copy()
 w = sub["Wobj"].to_numpy()
 
-# split (evita doppio conteggio sul 100)
+# split 
 w_top    = w[(w > 0)    & (w < 100)]
 w_bottom = w[(w >= 100) & (w <= 700)]
 
@@ -2793,13 +2785,13 @@ plt.show()
 import pandas as pd, numpy as np, re, unicodedata
 import matplotlib.pyplot as plt
 
-# ===== PARAMETERS comuni =====
+# ===== PARAMETERS  =====
 FILENAME, SHEET = "DB.xlsx", "DB"
 FIGSIZE = (6.30, 4.33)   # ~160 x 110 mm (half page)
 DPI = 300
 BAR_COLOR = "#000000"   # black
-ALPHA = 1            # leggermente meno trasparente
-EDGE_COLOR = "white"    # contorni per distinguere i bin
+ALPHA = 1            
+EDGE_COLOR = "white"   
 EDGE_LW = 0.4
 
 
@@ -2836,7 +2828,7 @@ def make_bins(lo, hi, step):
     right = np.ceil((hi - lo) / step) * step + lo
     return np.arange(lo, right + step/2.0, step)
 
-# ===== Lettura base =====
+# ===== Reading =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or   = col_like(raw, "Or_fin")
 c_st   = col_like(raw, "State")
@@ -2874,7 +2866,7 @@ mask_C = (
 )
 
 mask_CH = df["State"].eq(U("SWITZERLAND"))
-mask_IT = df["State"].isin({U("ITALY"), U("SAN MARINO")})  # etichetta: "Italy"
+mask_IT = df["State"].isin({U("ITALY"), U("SAN MARINO")})  # label: "Italy"
 
 AREAS = [
     ("Area A", mask_A),
@@ -2893,7 +2885,7 @@ def plot_area_complete_3to5(area_label, area_mask):
     sub = df[is_or_3to5 & is_comp & has_w & area_mask].copy()
     w = sub["Wobj"].to_numpy()
 
-    # split (evita doppio conteggio al confine 300 g)
+    # split 
     w_top    = w[(w > 0) & (w <  X_TOP[1])]
     w_bottom = w[(w >= X_BOTTOM[0]) & (w <= X_BOTTOM[1])]
 
@@ -2967,7 +2959,7 @@ EDGE_COLOR = "white"     # thin white edge
 EDGE_LW = 0.6
 
 TITLE = "Complete Ingots (Or. 3–5)"
-BIN_WIDTH = 150.0        # <<< bin di 150 g
+BIN_WIDTH = 150.0        # <<< bin 150 g
 
 # ===== Utils =====
 def col_like(df, name):
@@ -3002,7 +2994,7 @@ def norm(s):
     s = re.sub(r"[^a-z0-9]+", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
-# ===== Lettura =====
+# ===== Reading =====
 raw = pd.read_excel(FILENAME, sheet_name=SHEET)
 c_or   = col_like(raw, "Or_fin")
 c_st   = col_like(raw, "State")
@@ -3042,7 +3034,7 @@ mask_C  = ((df["State"].eq(GER) & df["Region"].isin({U("MECKLENBURG-VORPOMMERN")
            (df["State"].eq(GER) & df["Region"].isin({U("THÜRINGEN"), U("HESSEN"), U("RHEINLAND-PFALZ")})) |
            (df["Region"].eq(U("SACHSEN-ANHALT"))))
 mask_CH = df["State"].eq(U("SWITZERLAND"))
-mask_IT = df["State"].isin({U("ITALY"), U("SAN MARINO")})  # etichetta: Italy
+mask_IT = df["State"].isin({U("ITALY"), U("SAN MARINO")})  # label: Italy
 
 AREAS = [
     ("Area A", mask_A),
@@ -3052,7 +3044,7 @@ AREAS = [
     ("Italy", mask_IT),
 ]
 
-# ===== Bins fissi: 0, 150, 300, ... fino al massimo arrotondato =====
+# ===== fixed bins: 0, 150, 300, ... =====
 all_vals = df["Wobj"].values
 all_vals = all_vals[np.isfinite(all_vals) & (all_vals > 0)]
 if all_vals.size == 0:
@@ -3083,7 +3075,6 @@ for ax, (label, m) in zip(axes, AREAS):
     # style
     ax.yaxis.grid(True, color="0.90", lw=0.7); ax.set_axisbelow(True)
     for sp in ("top","right"): ax.spines[sp].set_visible(False)
-    # un po' di headroom
     if counts.size: ax.set_ylim(0, np.ceil(counts.max()*1.30))
 
 axes[-1].set_xlabel("Weight (gr)", fontsize=10)
@@ -3125,7 +3116,7 @@ c_frag   = col_like(raw, "Fragmented")
 c_comp   = col_like(raw, "Complete")
 c_match  = col_like(raw, "Matching fr")
 
-# DataFrame di lavoro
+# Working DataFrame
 d = pd.DataFrame({
     "Or_fin":       to_str_u(raw[c_or]).str.replace(r"\s+","_", regex=True),
     "State":        to_str_u(raw[c_state]),
@@ -3198,7 +3189,7 @@ def make_fragmented_ingots_hist(area_label: str, area_mask):
     w_top    = w[(w > 0)   & (w <= 100)]
     w_bottom = w[(w > 100) & (w <= 1000)]
 
-    # bins richiesti
+    # bins 
     bw_top = 1.9
     bw_bot = 8.3
     bins_top = np.arange(0,   100 + bw_top, bw_top)
@@ -3274,6 +3265,7 @@ for label, m in AREAS:
 # ============================================================
 
 # ================== FRAGMENTED OBJ. - NO INGOTS / NO GOLD - 1/2 PAGE (SEPARATE AREAS, HIGHLIGHT BIN) ==================
+    
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import numpy as np
 import re, unicodedata
@@ -3304,7 +3296,7 @@ c_frag   = col_like(raw, "Fragmented")
 c_comp   = col_like(raw, "Complete")
 c_match  = col_like(raw, "Matching fr")
 
-# DataFrame di lavoro
+# Working DataFrame
 d = pd.DataFrame({
     "Or_fin":       to_str_u(raw[c_or]).str.replace(r"\s+","_", regex=True),
     "State":        to_str_u(raw[c_state]),
@@ -3331,7 +3323,7 @@ def _norm(s):
 
 def is_ingot(s_raw: str) -> bool:
     s = _norm(s_raw)
-    # escludi Ring/Spangenbarren dal concetto di ingot
+    # exclude Ring/Spangenbarren by ingots
     if "ringbarren" in s or "spangenbarren" in s:
         return False
     return ("ingot" in s) or ("barren" in s)
@@ -3342,6 +3334,7 @@ def starts_with_gold(s_raw: str) -> bool:
     return s.startswith("gold ")
 
 # --- masks for Areas (as defined) ---
+    
 GER = U("GERMANY")
 mask_A = (
     d["Region"].isin({U("BADEN-WÜRTTEMBERG"), U("BAYERN")}) |
@@ -3368,7 +3361,7 @@ AREAS = [
     ("Italy",       mask_I),
 ]
 
-# ---------- helper evidenziazione basata su BIN reali ----------
+# ---------- helper highlighting based on real BINS ----------
 def _nearest_bin_index(bins, value):
     """Index of the bin whose center is nearest to 'value'."""
     centers = (bins[:-1] + bins[1:]) / 2.0
@@ -3391,7 +3384,7 @@ def _indices_around(bins, center, n_before, n_after, include_center=True):
     return idxs
 
 def _merge_consecutive(idxs):
-    """Converte indici [i1,i2,...] in blocchi continui [(start,end), ...]."""
+        """Converts indices [i1, i2, ...] into continuous blocks [(start, end), ...]."""
     if not idxs:
         return []
     idxs = sorted(idxs)
@@ -3408,12 +3401,12 @@ def _merge_consecutive(idxs):
 
 def compute_all_highlight_bins(bins_top):
     """
-    Regole:
-      10  → solo il bin centrale
-      20  → 1 prima, centrale, 1 dopo
-      30  → 2 prima, centrale, 1 dopo
-      40,50,60 → 2 prima, centrale, 2 dopo
-      80  → 3 prima, centrale, 3 dopo
+    Rules:
+      10  → central bin only
+      20  → 1 bin before, central bin, 1 bin after
+      30  → 2 bins before, central bin, 1 bin after
+      40, 50, 60 → 2 bins before, central bin, 2 bins after
+      80  → 3 bins before, central bin, 3 bins after
     """
     idxs = set()
     idxs |= _indices_around(bins_top, 10, 0, 0, include_center=True)
@@ -3425,6 +3418,7 @@ def compute_all_highlight_bins(bins_top):
     return sorted(idxs)
 
 # ---------- function producing the figure for each area ----------
+    
 def make_fragmented_noningot_nogold_hist(area_label: str, area_mask):
     # global filters: OR_3-5, weight>0, fragments, exclusions
     mask_period = d["Or_fin"].isin({"OR_3","OR_4","OR_5"})
@@ -3438,7 +3432,7 @@ def make_fragmented_noningot_nogold_hist(area_label: str, area_mask):
     w_top    = w[(w > 0)   & (w <= 100)]
     w_bottom = w[(w > 100) & (w <= 600)]
 
-    # bins richiesti
+    # bins
     bw_top = 1.11
     bw_bot = 8.5
     bins_top = np.arange(0,   100 + bw_top, bw_top)
@@ -3459,7 +3453,7 @@ def make_fragmented_noningot_nogold_hist(area_label: str, area_mask):
         x0, x1 = float(bins_top[a]), float(bins_top[b+1])
         ax1.axvspan(x0, x1, **HIGHLIGHT_STYLE)
 
-    # istogramma
+    # histogram
     ax1.hist(w_top, bins=bins_top, color=FRAG_GRAY, **EDGE_KW, zorder=3)
     ax1.xaxis.set_major_locator(MultipleLocator(10))
     ax1.xaxis.set_major_formatter(FormatStrFormatter('%d'))
@@ -3516,6 +3510,7 @@ for label, m in AREAS:
 # ============================================================
 
 # ================== FRAGMENTED - SICKLES vs OTHERS - 1/2 PAGE (ALL AREAS) ==================
+    
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import numpy as np
 import re, unicodedata
@@ -3532,14 +3527,14 @@ ALPHA_BAR = 1
 # --- highlighting (top panel only) ---
 # Highlighting in the top panel: combined rules
 HIGHLIGHT_RULES = {
-    10: (0, 0),   # solo il centrale
-    20: (1, 1),   # 1 prima + centrale + 1 dopo
-    30: (2, 1),   # 2 prima + centrale + 1 dopo
-    40: (2, 2),   # 2 prima + centrale + 2 dopo
+    10: (0, 0),   
+    20: (1, 1),   
+    30: (2, 1),   
+    40: (2, 2),   
     50: (2, 2),
     60: (2, 2),
-    80: (3, 3),   # 3 prima + centrale + 3 dopo
-    100: (2, 2),  # richiesti ora
+    80: (3, 3),   
+    100: (2, 2),  
     120: (2, 2),
 }
 HIGHLIGHT_STYLE = dict(facecolor="darkred", alpha=0.30, edgecolor="none", zorder=1)
@@ -3598,7 +3593,7 @@ mask_weight = d["Weight_obj"] > 0
 mask_complete = d["Complete"] < 1
 mask_fragcond = (d["Fragmented"] > 0) | (d["Matching_fr"] > 0)
 
-# --- selezioni top/bottom ---
+# --- selections top/bottom ---
 sel_top = d[mask_period & mask_weight & mask_complete & mask_fragcond & d["Artefact"].apply(is_sickle)].copy()
 
 mask_excl_bottom = (~d["Artefact"].apply(is_sickle)) & (~d["Artefact"].apply(is_ingot)) & (~d["Artefact"].apply(starts_with_gold))
@@ -3739,7 +3734,7 @@ HEADROOM = 0.25               # +25% headroom above the bars
 EDGE_KW = dict(edgecolor="#000000", linewidth=0.5)
 ALPHA_STACK = 0.35            # fill transparency (edges remain opaque)
 
-# --- palette grigi (ordine A,B,C,CH,Italy) ---
+# --- palette greys (order A,B,C,CH,Italy) ---
 COLS = ["#000000", "#5A5A5A", "#9E9E9E", "#CFCFCF", "#FFFFFF"]
 color_list = [to_rgba(c, ALPHA_STACK) for c in COLS]
 
@@ -3751,7 +3746,7 @@ HIGHLIGHT_RULES = {
 }
 HIGHLIGHT_STYLE = dict(facecolor="darkred", alpha=0.20, edgecolor="none")
 
-# --- normalizzazione / categorie ---
+# --- normalization / categories ---
 def _strip_accents(s):
     s = str(s).replace("ß","ss")
     return "".join(ch for ch in unicodedata.normalize("NFKD", s)
@@ -3851,10 +3846,10 @@ def compute_highlight_blocks(bins, rules_dict):
 # --- figure ---
 fig, ax = plt.subplots(1, 1, figsize=FIGSIZE_HALF, dpi=DPI, constrained_layout=True)
 
-# istogramma stacked (riempimenti trasparenti, bordi neri)
+# histogram stacked )
 ax.hist(series, bins=bins, stacked=True, color=color_list, **EDGE_KW)
 
-# limiti asse e headroom
+# limit axis and headroom
 ax.set_xlim(0, 120)
 ymax = max(1, counts_total.max()) * (1 + HEADROOM)
 ax.set_ylim(0, ymax)
@@ -3926,14 +3921,14 @@ from matplotlib.patches import Rectangle
 
 # ---------- PARAMETERS ----------
 FILE  = "Balance_Weights_2024.xlsx"
-SHEET = 0  # oppure il nome del foglio
+SHEET = 0  
 
 FIGSIZE_HALF = (6.30, 4.33)   # approx. 160 x 110 mm (1/2 page)
 DPI = 300
 HEADROOM = 0.25               # +25% headroom above the bars
 EDGE_KW = dict(edgecolor="#000000", linewidth=0.5)
 
-# Evidenziazione (stesse regole)
+# Highlighting
 HIGHLIGHT_RULES = {
     10: (0, 0),  20: (1, 1),  30: (2, 1),
     40: (2, 2),  50: (2, 2),  60: (2, 2),
@@ -3990,10 +3985,10 @@ def compute_highlight_blocks(bins, rules_dict):
         idxs |= _indices_around(bins, c, nb, na, include_center=True)
     return _merge_consecutive(idxs)
 
-# ---------- LETTURA ----------
+# ---------- READING ----------
 bw_raw = pd.read_excel(FILE, sheet_name=SHEET)
 
-# columns (robuste a varianti)
+# columns 
 c_mass    = col_like(bw_raw, "Mass in g (complete/after reconstruction)", "mass in g (complete)", "mass in g", "mass", "weight")
 c_country = None
 for cand in ("country", "nation", "state"):
@@ -4010,7 +4005,7 @@ for cand in ("typology", "type", "form", "category"):
     except Exception:
         pass
 
-# DataFrame di lavoro
+# Working DataFrame
 d = pd.DataFrame({"Mass_g": pd.to_numeric(bw_raw[c_mass], errors="coerce")})
 if c_country is not None:
     d["Country"] = bw_raw[c_country].astype(str)
@@ -4022,11 +4017,10 @@ else:
     d["Typology"] = ""
 
 # ---------- FILTERS ----------
-# Escludi tipologie specificate
 EXCL_TYPO = {"kannelurenstein", "piriform", "other hanging"}
 mask_typo_ok = ~d["Typology"].map(lambda s: _norm(s) in EXCL_TYPO) if c_typo is not None else True
 
-# Escludi alcuni paesi
+# Ignore countries
 EXCL_COUNTRIES = {"ENGLAND", "PORTUGAL", "SPAIN"}
 mask_ctry_ok = ~d["Country"].map(lambda s: str(s).strip().upper() in EXCL_COUNTRIES) if c_country is not None else True
 
@@ -4046,10 +4040,9 @@ counts, _ = np.histogram(w, bins=bins)
 # ---------- figure ----------
 fig, ax = plt.subplots(1, 1, figsize=FIGSIZE_HALF, dpi=DPI, constrained_layout=True)
 
-# Barre NERE (non stacked)
 ax.hist(w, bins=bins, color="#000000", edgecolor="#FFFFFF", linewidth=0.6)
 
-# Limiti & headroom
+# Limits & headroom
 ax.set_xlim(0, 120)
 ymax = max(1, counts.max()) * (1 + HEADROOM)
 ax.set_ylim(0, ymax)
@@ -4130,7 +4123,7 @@ c_frag   = col_like(raw, "Fragmented")
 c_comp   = col_like(raw, "Complete")
 c_match  = col_like(raw, "Matching fr")
 
-# ---- normalizzazione / categorie ----
+# ---- normalization / categories ----
 def _strip_accents(s):
     s = str(s).replace("ß","ss")
     return "".join(ch for ch in unicodedata.normalize("NFKD", s)
@@ -4150,7 +4143,7 @@ def is_ingot(s_raw: str) -> bool:
 def starts_with_gold(s_raw: str) -> bool:
     return _norm(s_raw).startswith("gold")
 
-# ---- DataFrame di lavoro ----
+# ---- Working DataFrame ----
 d = pd.DataFrame({
     "Or_fin":      to_str_u(raw[c_or]).str.replace(r"\s+","_", regex=True),
     "State":       to_str_u(raw[c_state]),
@@ -4162,7 +4155,7 @@ d = pd.DataFrame({
     "Matching_fr": pd.to_numeric(raw[c_match], errors="coerce").fillna(0),
 })
 
-# ---- mappa periods (OR_4 e OR_5 accorpati) ----
+# ---- map periods (OR_4 and OR_5 together) ----
 def map_period(or_fin):
     if or_fin in {"OR_1","OR_2","OR_3"}: return or_fin
     if or_fin in {"OR_4","OR_5"}:        return "OR_4_5"
@@ -4193,7 +4186,7 @@ AREE = [
     ("Italy",       mask_I),
 ]
 
-# ---- definizioni di stato ----
+# ---- definitions  ----
 # Fragmented: Fragmented > 0  or  (Matching_fr > 0 and Complete < 1)
 is_fragmented = (d["Fragmented"] > 0) | ((d["Matching_fr"] > 0) & (d["Complete"] < 1))
 # Intact: Complete >= 1 and not fragmented
@@ -4209,7 +4202,7 @@ period_labels = [p for p,_ in PERIODI]
 
 # ---- metrics function on a subset ----
 def _metrics(w):
-    # misurati: >0 ; non pesati: NaN o 0
+    # measured: >0 ; not measured: NaN o 0
     w = pd.to_numeric(w, errors="coerce")
     measured = w > 0
     missing  = w.isna() | (w == 0)
@@ -4271,7 +4264,7 @@ stats_frag_df.loc[:, counts_mask] = stats_frag_df.loc[:, counts_mask].astype("In
 
 # ================== EXPORT EXCEL (XlsxWriter) ==================
 def export_frag_excel(df: pd.DataFrame, path: str = "stats_FRAG_intact_by_area_period.xlsx"):
-    import xlsxwriter  # richiede pacchetto installato
+    import xlsxwriter  
     flat = df.copy()
     flat.columns = [f"{p} | {g} | {m}" for (p,g,m) in flat.columns]
 
@@ -4395,7 +4388,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-# ---------- prerequisiti ----------
+# ---------- prerequisite ----------
 if "stats_frag_df" not in globals():
     raise NameError("Missing 'stats_frag_df'. Run the cell that creates it first.")
 
@@ -4405,7 +4398,7 @@ DPI = 300
 HEADROOM = 0.25
 BAR_W = 0.68
 
-COL_COMPLETE = "#000000"   # black per completi
+COL_COMPLETE = "#000000"   # black for complete
 COL_FRAG     = "#CFCFCF"   # light gray for fragments
 EDGE_NONE    = dict(edgecolor="none", linewidth=0.0)
 
@@ -4459,12 +4452,12 @@ for r, area in enumerate(area_order):
             Vkg(area, per, *groups["ing_est_frag"]),
         ]
 
-        # barre misurati (0,2)
+        # measured bars (0,2)
         ax.bar(xticks[[0,2]], [base[0], base[2]], BAR_W, color=COL_COMPLETE, zorder=3, **EDGE_NONE)
         ax.bar(xticks[[0,2]], [top[0],  top[2]],  BAR_W, bottom=[base[0], base[2]],
                color=COL_FRAG, zorder=3, **EDGE_NONE)
 
-        # barre stimati (1,3)
+        # estimated bars (1,3)
         ax.bar(xticks[[1,3]], [base[1], base[3]], BAR_W, color=COL_COMPLETE, zorder=3, **EDGE_NONE)
         ax.bar(xticks[[1,3]], [top[1],  top[3]],  BAR_W, bottom=[base[1], base[3]],
                color=COL_FRAG, zorder=3, **EDGE_NONE)
@@ -4493,7 +4486,7 @@ for r in range(len(area_order)):
     ax.set_ylabel(YLABEL_TEXT, fontsize=YLABEL_FS)
     ax.yaxis.set_label_coords(YLABEL_X, 0.5)
 
-# legenda globale
+# legend
 handles = [
     Patch(facecolor=COL_COMPLETE, edgecolor="none", label="Complete"),
     Patch(facecolor=COL_FRAG,     edgecolor="none", label="Fragmented"),
@@ -4510,7 +4503,7 @@ AREA_LABEL_XOFFSET = 0.20   # larger = further left
 AREA_LABEL_YSHIFT  = 0.01  # larger = further up
 
 x_left = min(axes[r, 0].get_position().x0 for r in range(len(area_order))) - AREA_LABEL_XOFFSET
-x_left = max(x_left, 0.01)  # evita di uscire dalla figure
+x_left = max(x_left, 0.01) 
 
 for r, area in enumerate(area_order):
     y_top = max(axes[r, c].get_position().y1 for c in range(len(period_order)))
@@ -4643,7 +4636,7 @@ for i, area in enumerate(AREAS):
     est  = np.array(data_est_py[area],  dtype=float)  # g/yr
     tot  = meas + est
 
-    # barre stacked
+    # stacked bars
     ax.bar(x, meas, BAR_W, color=COL_MEAS, zorder=3, **EDGE_NONE)
     ax.bar(x, est,  BAR_W, bottom=meas, color=COL_EST, zorder=3, **EDGE_NONE)
 
@@ -4658,10 +4651,10 @@ for i, area in enumerate(AREAS):
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
     ax.set_title(area, fontsize=9, pad=4)
 
-# y label solo sul primo pannello
+# y label 
 axes[0].set_ylabel("Weight per year (g)", fontsize=8)
 
-# legenda globale
+# legend
 handles = [Patch(facecolor=COL_MEAS, label="Measured (g/yr)"),
            Patch(facecolor=COL_EST,  label="Estimated (g/yr)")]
 fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.02),
@@ -4849,7 +4842,7 @@ try:
 except Exception:
     w_bal = np.array([])
 
-# ===== tqdm: forza barra TESTUALE (no widget) =====
+# ===== tqdm =====
 import sys, os
 os.environ["TQDM_NOTEBOOK"] = "0"   # non usare widget notebook
 try:
@@ -4877,7 +4870,7 @@ def run_cqa_mc_from_series(series,
                 "alpha_1": np.nan, "alpha_5": np.nan,
                 "quantum_max": np.nan, "phi_max": np.nan, "n": 0}
 
-    # ===== CQA (tua logica) =====
+    # ===== CQA =====
     df = pd.DataFrame({'Filtered Values': s})
     sample_size = df.count()
     coeff = 2 / sample_size
@@ -4902,7 +4895,7 @@ def run_cqa_mc_from_series(series,
         quantum_max = float(phi_q_df.loc[idx_best, 'quanta'])
         phi_max = float(phi_q_df.loc[idx_best, 'Phi_q_values'])
 
-    # ===== Monte Carlo (tua logica) =====
+    # ===== Monte Carlo =====
     def apply_variation(df_copy, mc_parameter):
         percent_diff = df_copy * mc_parameter
         random_matrix = np.random.uniform(-1, 1, size=df_copy.shape)
@@ -5007,7 +5000,7 @@ print(
 # ============== PREPARE SERIES for CQA (main DB) + PNAS (column W) ==============
 import pandas as pd, numpy as np, math, re, unicodedata, sys, os
 
-# ---------- tqdm: forza barra TESTUALE (no widget) ----------
+# ---------- tqdm ----------
 os.environ["TQDM_NOTEBOOK"] = "0"
 try:
     from tqdm import tqdm as _tqdm
@@ -5019,7 +5012,7 @@ except Exception:
     def tqdm_iter(it, **kw): 
         return it
 
-# ---------- helper robusti ----------
+# ---------- helper ----------
 def _strip_accents(s):
     s = str(s).replace("ß","ss")
     return "".join(ch for ch in unicodedata.normalize("NFKD", s)
@@ -5038,11 +5031,11 @@ def col_like(df, *needles):
     lows = [c.lower().strip() for c in cols]
     for n in needles:
         n_low = str(n).lower().strip()
-        # match esatto
+        # match 
         for i, c in enumerate(lows):
             if n_low == c:
                 return cols[i]
-        # match parziale
+        # match 
         for i, c in enumerate(lows):
             if n_low in c:
                 return cols[i]
@@ -5077,7 +5070,7 @@ c_frag   = col_like(df_src, "Fragmented", "fragmented")
 c_comp   = col_like(df_src, "Complete", "complete")
 c_match  = col_like(df_src, "Matching fr", "matching_fr", "matching fr.", "matching")
 
-# ---------- dataframe normalizzato ----------
+# ---------- dataframe normalized ----------
 d = pd.DataFrame({
     "Or_fin":      to_str_u(df_src[c_or]).str.replace(r"\s+", "_", regex=True),
     "State":       to_str_u(df_src[c_state]),
@@ -5163,7 +5156,6 @@ def run_cqa_mc_from_series(series,
                 "quantum_max": np.nan, "phi_max": np.nan, "n": 0}
 
     df = pd.DataFrame({'Filtered Values': s})
-    # coefficiente campionario
     coeff = 2 / df.count()
     sample_coefficient = float(np.sqrt(coeff).iloc[0])
 
@@ -5201,7 +5193,7 @@ def run_cqa_mc_from_series(series,
         mc_vals.append(phi_for_df(final_mc_df[[col]], quanta_arr))
     MC = pd.DataFrame(mc_vals, columns=quanta_arr).T
 
-    # soglie (1% e 5%)
+    # thresholds (1% e 5%)
     share1 = max(1, round(mc_iterations * 0.01))
     share5 = max(1, round(mc_iterations * 0.05))
     mc_max = MC.max()
@@ -5307,7 +5299,7 @@ def plot_panel(ax, result, title, show_alpha=False, show_band_lines=False, y_lim
 
     # area under the curve
     _fill_between_zero(ax, x, y, face=COL_FILL, alpha=0.35, z=1)
-    # linea
+    # line
     ax.plot(x, y, color=COL_LINE, lw=1.1, zorder=2)
 
     # ONLY dashed lines at 9 and 11 (no fill)
@@ -5364,7 +5356,7 @@ plt.show()
 # ============== CQA - OR_3-5, Complete>0, Weight_obj - Areas A/B/C/Switzerland (ingots included, Gold* excluded) ==============
 import pandas as pd, numpy as np, math, re, unicodedata, sys, os
 
-# ---------- tqdm (barra testuale, no widget) ----------
+# ---------- tqdm ----------
 os.environ["TQDM_NOTEBOOK"] = "0"
 try:
     from tqdm import tqdm as _tqdm
@@ -5392,11 +5384,11 @@ def col_like(df, *needles):
     lows = [c.lower().strip() for c in cols]
     for n in needles:
         n_low = str(n).lower().strip()
-        # match esatto
+        # match 
         for i, c in enumerate(lows):
             if n_low == c:
                 return cols[i]
-        # match parziale
+        # match 
         for i, c in enumerate(lows):
             if n_low in c:
                 return cols[i]
@@ -5405,7 +5397,7 @@ def starts_with_gold(s_raw: str) -> bool:
     return _norm(s_raw).startswith("gold")
 U = lambda s: str(s).upper().strip()
 
-# ---------- carica DB principale ----------
+# ---------- Reading ----------
 if "raw" in globals():
     df_src = raw.copy()
 else:
@@ -5427,7 +5419,7 @@ c_type   = col_like(df_src, "Artefact", "artifact", "type")
 c_weight = col_like(df_src, "Weight_obj", "weight obj", "weight_obj", "weight", "mass", "weight in g", "mass in g")
 c_comp   = col_like(df_src, "Complete", "complete")
 
-# ---------- dataframe normalizzato ----------
+# ---------- dataframe normalized ----------
 d = pd.DataFrame({
     "Or_fin":      to_str_u(df_src[c_or]).str.replace(r"\s+", "_", regex=True),
     "State":       to_str_u(df_src[c_state]),
@@ -5444,7 +5436,7 @@ mask_period = d["Or_fin"].isin({"OR_3","OR_4","OR_5"})
 mask_range  = d["Weight_obj"].between(7, 200, inclusive="left")
 # Intact objects/ingots: Complete > 0
 mask_intact = d["Complete"] > 0
-# Escludi Gold*; ingots INCLUSI
+# Ignore Gold*; ingots included
 mask_keep   = ~d["Artefact"].apply(starts_with_gold)
 
 filt_common = mask_period & mask_range & mask_intact & mask_keep
@@ -5503,7 +5495,6 @@ def run_cqa_mc_from_series(series,
 
     df = pd.DataFrame({'Filtered Values': s})
 
-    # coefficiente campionario
     coeff = 2 / df.count()
     sample_coefficient = float(np.sqrt(coeff).iloc[0])
 
@@ -5549,7 +5540,7 @@ def run_cqa_mc_from_series(series,
         MC_vals.append(phi_for_df(final_mc_df[[col]], quanta_arr))
     MC = pd.DataFrame(MC_vals, columns=quanta_arr).T
 
-    # soglie (1% e 5%)
+    # threshold (1% e 5%)
     share1 = max(1, round(mc_iterations * 0.01))
     share5 = max(1, round(mc_iterations * 0.05))
     mc_max = MC.max()
@@ -5581,7 +5572,7 @@ cqa_B  = cqa_results["Area B"]
 cqa_C  = cqa_results["Area C"]
 cqa_IT_comp = cqa_results["Italy"]
 
-# ---------- riepilogo a console ----------
+# --------------------
 def _fmt(x):
     try:
         if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))):
@@ -5716,7 +5707,7 @@ else:
     if df_src is None:
         raise FileNotFoundError("Could not find 'raw' in memory or the DB.xlsx / DB_SI.xlsx files on disk.")
 
-# ---------- mappatura columns ----------
+# ---------- mapping columns ----------
 c_or     = col_like(df_src, "Or_fin", "or fin", "period", "or_fin")
 c_state  = col_like(df_src, "State")
 c_reg    = col_like(df_src, "Region")
@@ -5726,7 +5717,7 @@ c_frag   = col_like(df_src, "Fragmented", "fragmented")
 c_comp   = col_like(df_src, "Complete", "complete")
 c_match  = col_like(df_src, "Matching fr", "matching_fr", "matching fr.", "matching")
 
-# ---------- dataframe normalizzato ----------
+# ---------- dataframe normalized ----------
 d = pd.DataFrame({
     "Or_fin":      to_str_u(df_src[c_or]).str.replace(r"\s+", "_", regex=True),
     "State":       to_str_u(df_src[c_state]),
@@ -5815,7 +5806,7 @@ if "run_cqa_mc_from_series" not in globals():
 cqa_or2_A_frag     = run_cqa_mc_from_series(w_or2_A_frag,   mc_iterations=100)
 cqa_or2_all_frag   = run_cqa_mc_from_series(w_or2_ALL_frag, mc_iterations=100)
 
-# riepilogo rapido
+# resume
 def _fmt(x):
     try:
         if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))): return "–"
@@ -5907,7 +5898,7 @@ import re
 import unicodedata
 import sys
 
-# --- tqdm (barra testuale) ---
+# --- tqdm ---
 try:
     from tqdm import tqdm as _tqdm
     def tqdm_iter(it, **kw):
@@ -5936,11 +5927,11 @@ def col_like(df, *needles):
     lows = [c.lower().strip() for c in cols]
     for n in needles:
         n_low = str(n).lower().strip()
-        # match esatto
+        # match
         for i, c in enumerate(lows):
             if n_low == c:
                 return cols[i]
-        # match parziale
+        # match
         for i, c in enumerate(lows):
             if n_low in c:
                 return cols[i]
@@ -5977,7 +5968,7 @@ c_frag   = col_like(df_src, "Fragmented", "fragmented")
 c_comp   = col_like(df_src, "Complete", "complete")
 c_match  = col_like(df_src, "Matching fr", "matching_fr", "matching fr.", "matching", "matching dr", "matching_dr")
 
-# ---------- DataFrame normalizzato ----------
+# ---------- DataFrame normalized ----------
 d = pd.DataFrame({
     "Or_fin":      to_str_u(df_src[c_or]).str.replace(r"\s+", "_", regex=True),
     "State":       to_str_u(df_src[c_state]),
@@ -6029,7 +6020,6 @@ def run_cqa_mc_from_series(series,
                 "quantum_max": np.nan, "phi_max": np.nan, "n": 0}
 
     df = pd.DataFrame({'Filtered Values': s})
-    # coefficiente campionario
     sample_size = df.count()
     coeff = 2 / sample_size
     sample_coefficient = float(np.sqrt(coeff).iloc[0])
@@ -6075,7 +6065,7 @@ def run_cqa_mc_from_series(series,
         Montecarlo_phi_q_values.append(phi_for_df(final_mc_df[[col]], quanta_arr))
     Montecarlo_phi_q = pd.DataFrame(Montecarlo_phi_q_values, columns=quanta_arr).T
 
-    # soglie 1% e 5%
+    # threshold 1% e 5%
     a1_share = max(1, round(mc_iterations * 0.01))
     a5_share = max(1, round(mc_iterations * 0.05))
     mc_max_column = Montecarlo_phi_q.max()
@@ -6096,7 +6086,7 @@ def run_cqa_mc_from_series(series,
 cqa_or2_ingot_areaA = run_cqa_mc_from_series(w_or2_ingot_areaA, mc_iterations=100)
 cqa_or2_ingot_all   = run_cqa_mc_from_series(w_or2_ingot_all,   mc_iterations=100)
 
-# riepilogo rapido
+# resume
 def _fmt(x):
     try:
         if x is None or (isinstance(x, float) and (np.isnan(x) or np.isinf(x))):
@@ -6124,7 +6114,7 @@ print("α5% (Area A / Whole):", _fmt(cqa_or2_ingot_areaA["alpha_5"]), _fmt(cqa_o
 import pandas as pd, numpy as np, math, re, unicodedata, sys, os
 import matplotlib.pyplot as plt
 
-# --- tqdm barra testuale (no widget) ---
+# --- tqdm ---
 os.environ["TQDM_NOTEBOOK"] = "0"
 try:
     from tqdm import tqdm as _tqdm
@@ -6150,15 +6140,15 @@ def col_like(df, *needles):
     cols = list(df.columns); low = [c.lower().strip() for c in cols]
     for n in needles:
         nlow = str(n).lower().strip()
-        # match esatto
+        # match 
         for i,c in enumerate(low):
             if nlow == c: return cols[i]
-        # match parziale
+        # match 
         for i,c in enumerate(low):
             if nlow in c: return cols[i]
     raise KeyError(f"Column not found for: {needles}")
 
-# ---------- carica DB principale ----------
+# ---------- reading ----------
 if "raw" in globals():
     df_src = raw.copy()
 else:
@@ -6182,7 +6172,7 @@ c_frag   = col_like(df_src, "Fragmented","fragmented")
 c_comp   = col_like(df_src, "Complete","complete")
 c_match  = col_like(df_src, "Matching fr","matching_fr","matching fr.","matching")
 
-# ---------- dataframe normalizzato ----------
+# ---------- dataframe normalized ----------
 d = pd.DataFrame({
     "Or_fin":      to_str_u(df_src[c_or]).str.replace(r"\s+","_", regex=True),
     "State":       to_str_u(df_src[c_state]),
@@ -6194,7 +6184,7 @@ d = pd.DataFrame({
     "Matching_fr": pd.to_numeric(df_src[c_match], errors="coerce").fillna(0),
 })
 
-# ---------- SOLO Artefact = 'ingot' (match ESATTO, case-insensitive) ----------
+# ---------- ONLY Artefact = 'ingot' (match, case-insensitive) ----------
 def is_ingot_exact(s_raw: str) -> bool:
     return _norm(s_raw) == "ingot"
 mask_ingot = d["Artefact"].apply(is_ingot_exact)
@@ -6252,7 +6242,7 @@ def run_cqa_mc_from_series(series,
     phi_q_df = pd.DataFrame(cos.sum(axis=0), columns=["Phi_q_values"]) * sample_coeff
     phi_q_df["quanta"] = q
 
-    # --- best (robusto: indexing posizionale) ---
+    # --- best
     y_vals = phi_q_df['Phi_q_values'].to_numpy()
     x_vals = phi_q_df['quanta'].to_numpy()
     if np.all(np.isnan(y_vals)):
@@ -6265,7 +6255,7 @@ def run_cqa_mc_from_series(series,
 
 
     # Monte Carlo
-    # ---------- Monte Carlo (vettorizzato) ----------
+    # ---------- Monte Carlo  ----------
     rng = np.random.default_rng()  # optional: pass a seed for reproducibility
     # generate Monte Carlo columns (same logic as the jitter)
     inter = []
@@ -6300,7 +6290,7 @@ def run_cqa_mc_from_series(series,
             "alpha_1": alpha_1, "alpha_5": alpha_5,
             "quantum_max": quantum_max, "phi_max": phi_max, "n": n}
 
-MC_ITERS = 1000  # alza/abbassa a piacere
+MC_ITERS = 1000  
 cqa_ing_AreaA = run_cqa_mc_from_series(w_ing_AreaA, mc_iterations=MC_ITERS)
 cqa_ing_All   = run_cqa_mc_from_series(w_ing_All,   mc_iterations=MC_ITERS)
 
@@ -6361,7 +6351,7 @@ def _style_axes(ax, title):
     ax.set_xlim(4, 16)
     ax.set_xticks(np.arange(4, 17, 1))
     ax.set_ylim(-6, 8)
-    ax.set_yticks(np.arange(-6, 9, 2))  # <<< tick Y da -6 a 8 con passo 2
+    ax.set_yticks(np.arange(-6, 9, 2)) 
     ax.grid(axis="y", color="0.90")
     ax.set_ylabel("φ(q)")
     ax.set_title(title, loc="left", fontsize=12)
